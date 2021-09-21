@@ -43,8 +43,20 @@ def main(x509_user_proxy: str,
     result['timestamp'] = pd.to_datetime("today")
     result['available_GB'] = round(result['available_bytes']/1073741824,2)
     result['GB'] = round(result['bytes'] / 1073741824, 2)
-    print(result.to_dict('records'))
-    return result.to_dict('records')
+
+    rse_info = []
+    for rse in set(result['rse'].values):
+        attrs = CLIENT.list_rse_attributes(rse)
+        attrs['rse'] = attrs.pop(rse)
+        attrs['rse'] = rse
+        rse_info.append(attrs)
+    rse_info = pd.DataFrame(rse_info)
+
+    rse_info = rse_info[['rse', 'cloud', 'site', 'tier', 'freespace']]
+    info = pd.merge(result, rse_info, left_on='rse', right_on='rse')
+
+    print(info.to_dict('records'))
+    return info.to_dict('records')
 
 if __name__ == '__main__':
     typer.run(main)
