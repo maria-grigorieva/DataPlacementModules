@@ -7,6 +7,20 @@
 # - corepower
 # - datadisk
 # - FREE_GB
+# Sample Result:
+# -------------------------------------------------------------------------------
+#            sitename cloud  tier  corepower                  datadisk    FREE_GB
+# 0             AGLT2    US     2     10.960            AGLT2_DATADISK  284157.38
+# 1   Australia-ATLAS    CA     2     11.377  AUSTRALIA-ATLAS_DATADISK  146160.12
+# 2      BEIJING-LCG2    FR     2     19.113     BEIJING-LCG2_DATADISK   34461.96
+# 3         BNL-ATLAS    US     1     12.690         BNL-OSG2_DATADISK  183927.31
+# 4            BNLHPC    US     3     12.690           BNLHPC_DATADISK   23496.42
+# ..              ...   ...   ...        ...                       ...        ...
+# 76     ZA-WITS-CORE    NL     3     10.000     ZA-WITS-CORE_DATADISK   38495.07
+# 77             ifae    ES     2     12.167             IFAE_DATADISK   57020.10
+# 78              pic    ES     1     12.121              PIC_DATADISK  278164.68
+# 79       praguelcg2    DE     2     16.752       PRAGUELCG2_DATADISK  171278.79
+# 80    wuppertalprod    DE     2      9.800    WUPPERTALPROD_DATADISK  262586.40
 
 import typer
 import urllib.parse
