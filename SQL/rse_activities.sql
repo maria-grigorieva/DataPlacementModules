@@ -1,4 +1,17 @@
 -- get all activities as all DATADISKs with sites/clouds
+
+-- RSE                               |ACTIVITY              |N_REQUESTS|BYTES          |SITE                   |CLOUD|
+-- ----------------------------------+----------------------+----------+---------------+-----------------------+-----+
+-- INFN-ROMA1_DATADISK               |Production Output     |     14473| 10900462875385|INFN-ROMA1             |IT   |
+-- DESY-ZN_DATADISK                  |Production Output     |      7495|  1500561067417|DESY-ZN                |DE   |
+-- RAL-LCG2-ECHO_DATADISK            |Data Consolidation    |     24134| 32129587751967|RAL-LCG2               |UK   |
+-- TAIWAN-LCG2_DATADISK              |Data rebalancing      |     49015| 90407892332030|Taiwan-LCG2            |TW   |
+-- GRIF-LAL_DATADISK                 |Production Input      |       158|   107135594066|GRIF-LAL               |FR   |
+-- NCG-INGRID-PT_DATADISK            |Functional Test       |       335|      351272960|NCG-INGRID-PT          |ES   |
+-- TAIWAN-LCG2_DATADISK              |Data Challenge        |     19587|113507571228197|Taiwan-LCG2            |TW   |
+-- BNL-OSG2_DATADISK                 |Production Input      |      2197|  2788257862869|BNL-ATLAS              |US   |
+--
+
 WITH a as(
 SELECT ATLAS_RUCIO.id2rse(DEST_RSE_ID) AS rse,
 	activity,
