@@ -20,8 +20,6 @@ def main(x509_user_proxy: str,
     with open(input_file) as f:
         datasets = [line.rstrip('\n') for line in f]
 
-    print(datasets)
-
     CLIENT = Client()
     for d in datasets:
         if ':' in d:
