@@ -79,6 +79,7 @@ def main(ssl_cert: str,
 
     result = pd.merge(sites_info, disk_sizes, left_on='datadisk', right_on='DATADISK')
     result.drop('DATADISK', 1, inplace=True)
+    result['datetime'] = pd.to_datetime('today')
     result = result[result['FREE_GB'] > disk_free_size_limit_GB]
     typer.echo(f'Number of sites, available for replicas creation:{sites_info.shape}')
     typer.echo(result)
