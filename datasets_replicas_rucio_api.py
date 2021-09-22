@@ -54,6 +54,7 @@ def main(x509_user_proxy: str,
     info = pd.merge(result, rse_info, left_on='rse', right_on='rse')
 
     print(info.to_dict('records'))
+    info.to_csv('dataset_replicas.csv')
     return info.to_dict('records')
 
 if __name__ == '__main__':
