@@ -1,0 +1,19 @@
+Computing Site -- site
+Queue -- queue
+Cloud -- cloud
+Dataset -- dataset
+Scope -- scope
+Tier Level - tier_level
+Datadisk -- rse
+Current timestamp -- datetime
+
+
+* Queues efficiency -- queues_efficiency
+finished / (finished + failed) jobs
+
+* Queues occupancy -- queues_occupancy
+ running / (assigned + defined + starting + assigned)
+
+ * Free space on disk -- rse_free_bytes / rse_free_gb
+
+
