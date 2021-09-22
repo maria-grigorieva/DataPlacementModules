@@ -31,6 +31,7 @@ def main(ssl_cert: str,
 
     df = pd.DataFrame(queues_info)
     df = df.explode('rse')
+    df['datetime'] = pd.to_datetime('today')
     print(df)
     df.to_csv('data_samples/queue_site_disk.csv')
 
