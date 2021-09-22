@@ -10,7 +10,8 @@
 -- UKI-LT2-BRUNEL_DATADISK           |UKI-LT2-BRUNEL_DATADISK           |UKI-LT2-Brunel         |UKI-LT2-Brunel         |UK       |UK        |            0|     13|
 
 
-SELECT ATLAS_RUCIO.id2rse(SRC_RSE_ID) AS SOURCE,
+SELECT sysdate AS timestamp,
+ATLAS_RUCIO.id2rse(SRC_RSE_ID) AS SOURCE,
 ATLAS_RUCIO.id2rse(DEST_RSE_ID) AS DEST,
 (SELECT value AS site FROM ATLAS_RUCIO.RSE_ATTR_MAP
 WHERE RSE_ID = SRC_RSE_ID AND KEY='site') AS src_site,
