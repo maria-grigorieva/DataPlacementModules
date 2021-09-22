@@ -70,17 +70,34 @@ def main(ssl_cert: str,
     url_queues = urllib.parse.urljoin(cric_base_url, 'api/atlas/pandaqueue/query/?json')
     cric_queues = requests.get(url_queues, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
 
+    queue_disk = []
+    for queue in cric_queues:
+        if 'write_lan' in cric_queues[queue]['astorages']:
+            write_lan_rse = [i for i in cric_queues[queue]['astorages']['write_lan'] if 'DATADISK' in i]
+            #write_lan_anal_rse = [i for i in cric_queues[queue]['astorages']['write_lan_analysis'] if 'DATADISK' in i]
+            queue_disk.append({
+                'queue': queue,
+                'rse': list(set(write_lan_rse))
+            })
+
+    queue_disk = pd.DataFrame(queue_disk)
+    print(queue_disk)
+
     data = pd.DataFrame(data)
     data['site'] = data['COMPUTINGSITE'].apply(lambda x: cric_queues[x]['site'] if x in cric_queues else 'unknown')
     data['cloud'] = data['COMPUTINGSITE'].apply(lambda x: cric_queues[x]['cloud'] if x in cric_queues else 'unknown')
     data['tier_level'] = data['COMPUTINGSITE'].apply(lambda x: cric_queues[x]['tier_level'] if x in cric_queues else None)
     data.rename(columns={'COMPUTINGSITE':'queue'}, inplace=True)
+    data.rename(columns={'SITE_OCCUPANCY_RATE':'queue_occupancy_rate'}, inplace=True)
     # remove TEST queues
     data = data[~data['queue'].str.contains('TEST')]
     cols = data.columns
     data.columns = [c.lower() for c in cols]
-    print(data.to_dict('records'))
-    data.to_csv('site_occupancy_rate.csv')
+
+    result = pd.merge(data, queue_disk, left_on='queue', right_on='queue')
+    result = result.explode('rse')
+    print(result.to_dict('records'))
+    result.to_csv('data_samples/queue_occupancy_rate.csv')
 
 
 if __name__ == "__main__":
