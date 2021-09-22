@@ -83,6 +83,7 @@ def main(ssl_cert: str,
     result = result[result['FREE_GB'] > disk_free_size_limit_GB]
     typer.echo(f'Number of sites, available for replicas creation:{sites_info.shape}')
     typer.echo(result)
+    #result.to_csv('filtered.csv', date_format='%Y-%m-%d')
     return result
 
 
