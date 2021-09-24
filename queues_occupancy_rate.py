@@ -67,6 +67,8 @@ def main(connection: str,
 
     efficiency = """
         SELECT computingsite as queue,
+                finished,
+                failed,
                 NVL(ROUND(finished / NULLIF((finished + failed),0), 4), 0) as queue_efficiency
         FROM
             (SELECT * FROM
