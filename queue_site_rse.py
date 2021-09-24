@@ -2,6 +2,7 @@ import typer
 import urllib.parse
 import requests
 import pandas as pd
+import datetime as dt
 
 def main(ssl_cert: str,
          ssl_key: str,
@@ -17,7 +18,7 @@ def main(ssl_cert: str,
     queues_info = []
 
     for queue in cric_queues:
-        site = cric_queues[queue]['site']
+        site = cric_queues[queue]['rc_site']
         cloud = cric_queues[queue]['cloud']
         rses = [v for k,v in cric_queues[queue]['astorages'].items()]
         flat_list = [item for sublist in rses for item in sublist]
@@ -31,7 +32,7 @@ def main(ssl_cert: str,
 
     df = pd.DataFrame(queues_info)
     df = df.explode('rse')
-    df['datetime'] = pd.to_datetime('today')
+    df['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
     print(df)
     df.to_csv('data_samples/queue_site_disk.csv')
 
