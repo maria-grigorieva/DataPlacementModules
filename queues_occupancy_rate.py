@@ -1,25 +1,20 @@
 import cx_Oracle
 import pandas as pd
 import typer
-import urllib.parse
-import requests
 
 
-def main(ssl_cert: str,
-         ssl_key: str,
-         tls_ca_certificate: str,
-         connection: str,
+def main(connection: str,
          number_of_days: int = 1):
 
-    query = """
+    occupancy = """
             WITH all_statuses as (
             SELECT * FROM (
-            SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
+            SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite as queue, jobstatus, count(pandaid) as n_jobs
             FROM ATLAS_PANDA.JOBSACTIVE4
             WHERE modificationtime >= sysdate - :n_days
             GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
             UNION ALL
-            (SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
+            (SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite as queue, jobstatus, count(pandaid) as n_jobs
                 FROM ATLAS_PANDA.JOBSDEFINED4
             WHERE modificationtime >= sysdate - :n_days
                 GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
@@ -36,15 +31,15 @@ def main(ssl_cert: str,
                    'holding' as holding,
                    'throttled' as throttled
             ))
-                    ORDER BY datetime, computingsite),
+                    ORDER BY datetime, queue),
              rate as (
                  SELECT datetime,
-                        computingsite,
-                   ROUND(NVL(running/(defined+activated+starting+assigned),0),6) as site_occupancy_rate
+                        queue,
+                   ROUND(NVL(running/(defined+activated+starting+assigned),0),6) as queue_occupancy
                   FROM all_statuses
              )
             SELECT a.datetime,
-                   a.computingsite,
+                   a.queue,
                    a.running,
                    a.defined,
                    a.assigned,
@@ -53,22 +48,57 @@ def main(ssl_cert: str,
                    a.transferring,
                    a.holding,
                    a.throttled,
-                   r.site_occupancy_rate
+                   r.queue_occupancy
             FROM all_statuses a
-                JOIN rate r ON (a.computingsite = r.computingsite)
-            ORDER BY r.site_occupancy_rate DESC
+                JOIN rate r ON (a.queue = r.queue)
+            ORDER BY r.queue_occupancy DESC
     """
 
     cx_Oracle.init_oracle_client(lib_dir=r"/usr/lib/oracle/19.3/client64/lib/")
     connection = cx_Oracle.connect(connection)
     cursor = connection.cursor()
-    cursor.execute(query, n_days = number_of_days)
+    cursor.execute(occupancy, n_days = number_of_days)
     cursor.rowfactory = lambda *args: dict(zip([e[0] for e in cursor.description], args))
     data = cursor.fetchall()
-    data = pd.DataFrame(data)
-    cols = data.columns
-    data.columns = [i.lower() for i in cols]
-    data.rename(columns={'computingsite': 'queue'}, inplace=True)
+    occupancy_df = pd.DataFrame(data)
+    cols = occupancy_df.columns
+    occupancy_df.columns = [i.lower() for i in cols]
+
+    efficiency = """
+    SELECT
+    computingsite as queue,
+    NVL(ROUND(finished / (finished + failed), 4), 0) as queue_efficiency
+    FROM
+    (SELECT * FROM
+    (SELECT computingsite,
+     jobstatus,
+     count( *) as n_jobs
+    FROM
+    ATLAS_PANDA.JOBSARCHIVED4
+    WHERE modificationtime >= sysdate - :n_days
+    GROUP BY computingsite, jobstatus)
+    PIVOT
+        (
+        SUM(n_jobs)
+        for jobstatus in ('closed' as closed,
+        'cancelled' as cancelled,
+        'failed' as failed,
+        'finished' as finished
+                          ))
+    ORDER BY computingsite)
+    ORDER BY queue_efficiency DESC
+    """
+
+    cursor = connection.cursor()
+    cursor.execute(efficiency, n_days = number_of_days)
+    cursor.rowfactory = lambda *args: dict(zip([e[0] for e in cursor.description], args))
+    data = cursor.fetchall()
+    efficiency_df = pd.DataFrame(data)
+    cols = efficiency_df.columns
+    efficiency_df.columns = [i.lower() for i in cols]
+
+    merged = pd.merge(occupancy_df, efficiency_df,
+                      left_on='queue', right_on='queue')
 
     df = pd.read_csv('data_samples/queue_site_disk.csv', index_col=[0])
     #
@@ -100,9 +130,9 @@ def main(ssl_cert: str,
     # cols = data.columns
     # data.columns = [c.lower() for c in cols]
 
-    result = pd.merge(data, df[['queue','site','cloud','rse']], left_on='queue', right_on='queue')
+    result = pd.merge(merged, df[['queue','site','cloud','rse']], left_on='queue', right_on='queue')
     result = result.explode('rse')
-    result.to_csv('data_samples/queues_occupancy_rate.csv')
+    result.to_csv('data_samples/queues_metrics.csv')
 
 
 if __name__ == "__main__":
