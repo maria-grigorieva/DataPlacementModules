@@ -17,15 +17,15 @@ def main(connection: str,
                    computingsite as queue,
                    datetime
             FROM (
-            SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
+            SELECT TRUNC((sysdate),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
             FROM ATLAS_PANDA.JOBSACTIVE4
             WHERE modificationtime >= sysdate - :n_days
-            GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
+            GROUP BY TRUNC((sysdate),'DAY'), computingsite, jobstatus
             UNION ALL
-            (SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
+            (SELECT TRUNC((sysdate),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
                 FROM ATLAS_PANDA.JOBSDEFINED4
             WHERE modificationtime >= sysdate - :n_days
-                GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
+                GROUP BY TRUNC((sysdate),'DAY'), computingsite, jobstatus
             ))
             PIVOT
             (
