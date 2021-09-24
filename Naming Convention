@@ -14,6 +14,6 @@ finished / (finished + failed) jobs
 * Queues occupancy -- queues_occupancy
  running / (assigned + defined + starting + assigned)
 
- * Free space on disk -- rse_free_bytes / rse_free_gb
+* Free space on disk -- rse_free_bytes / rse_free_gb
 
 

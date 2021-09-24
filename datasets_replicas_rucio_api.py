@@ -5,6 +5,7 @@ import pandas as pd
 from rucio.client import Client
 import os
 import typer
+import datetime as dt
 
 def main(x509_user_proxy: str,
          account: str,
@@ -34,13 +35,17 @@ def main(x509_user_proxy: str,
         rules = CLIENT.list_replication_rule_full_history(scope=scope, name=name)
         official_replicas = [i['rse_expression'] for i in rules if i['rse_expression'] in replicas['rse'].values]
         replicas['official'] = replicas.apply (lambda row: row['rse'] in official_replicas, axis=1)
-        replicas = replicas[['scope','name','rse','available_bytes','available_length','created_at','updated_at','accessed_at',
-                  'length','bytes','state','official']]
+        replicas = replicas[['scope','name','rse','available_bytes','available_length',
+                             'created_at','updated_at','accessed_at','length','bytes',
+                             'state','official']]
+        # TODO:
+        # Convert datetime format to 'd-m-Y'
+        # datetime_cols = ['created_at','updated_at','accessed_at']
+
         arr.append(replicas)
     result = pd.concat(arr)
-    result['timestamp'] = pd.to_datetime("today")
-    result['available_GB'] = round(result['available_bytes']/1073741824,2)
-    result['GB'] = round(result['bytes'] / 1073741824, 2)
+    result['available_gb'] = round(result['available_bytes']/1073741824,2)
+    result['gb'] = round(result['bytes'] / 1073741824, 2)
 
     rse_info = []
     for rse in set(result['rse'].values):
@@ -51,10 +56,15 @@ def main(x509_user_proxy: str,
     rse_info = pd.DataFrame(rse_info)
 
     rse_info = rse_info[['rse', 'cloud', 'site', 'tier', 'freespace']]
+    rse_info['freespace'] = rse_info['freespace'].apply(pd.to_numeric, errors='coerce')
+    rse_info['rse_free_gb'] = round(rse_info['freespace']/1073741824, 2)
+    rse_info.rename(columns={'freespace':'rse_free_bytes'}, inplace=True)
+
     info = pd.merge(result, rse_info, left_on='rse', right_on='rse')
+    info['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
 
     print(info.to_dict('records'))
-    info.to_csv('dataset_replicas.csv')
+    info.to_csv('data_samples/dataset_replicas.csv')
     return info.to_dict('records')
 
 if __name__ == '__main__':
