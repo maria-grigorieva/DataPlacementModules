@@ -27,6 +27,7 @@ import urllib.parse
 import requests
 import cx_Oracle
 import pandas as pd
+import datetime as dt
 
 def main(ssl_cert: str,
          ssl_key: str,
@@ -52,15 +53,15 @@ def main(ssl_cert: str,
         # Ignore sites without disks
         if len(datadisks) > 0:
             tmp = {}
-            tmp['sitename'] = site
+            tmp['name'] = site
             tmp['cloud'] = cric_sites[site]['cloud']
             tmp['tier'] = cric_sites[site]['tier_level']
             tmp['corepower'] = cric_sites[site]['corepower']
-            tmp['datadisk'] = datadisks
+            tmp['rse'] = datadisks
             sites_info.append(tmp)
 
     sites_info = pd.DataFrame(sites_info)
-    sites_info = sites_info.explode('datadisk')
+    sites_info = sites_info.explode('rse')
 
     # get datadisk free space
     query_disk_size = """
@@ -77,13 +78,14 @@ def main(ssl_cert: str,
     disk_sizes = cursor.fetchall()
     disk_sizes = pd.DataFrame(disk_sizes)
 
-    result = pd.merge(sites_info, disk_sizes, left_on='datadisk', right_on='DATADISK')
+    result = pd.merge(sites_info, disk_sizes, left_on='rse', right_on='DATADISK')
     result.drop('DATADISK', 1, inplace=True)
-    result['datetime'] = pd.to_datetime('today')
+    result['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
     result = result[result['FREE_GB'] > disk_free_size_limit_GB]
+    result.rename(columns={'FREE_GB': 'free_gb'}, inplace=True)
     typer.echo(f'Number of sites, available for replicas creation:{sites_info.shape}')
     typer.echo(result)
-    #result.to_csv('filtered.csv', date_format='%Y-%m-%d')
+    result.to_csv('data_samples/filtered.csv', date_format='%Y-%m-%d')
     return result
 
 

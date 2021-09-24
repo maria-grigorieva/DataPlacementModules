@@ -59,8 +59,8 @@ def main(x509_user_proxy: str,
         ['scope', 'name', 'rse', 'available_bytes', 'available_length', 'created_at', 'updated_at', 'accessed_at',
          'length', 'bytes', 'state', 'official']]
     replicas['timestamp'] = pd.to_datetime("today")
-    replicas['available_GB'] = round(replicas['available_bytes'] / 1073741824, 2)
-    replicas['GB'] = round(replicas['bytes'] / 1073741824, 2)
+    replicas['available_gb'] = round(replicas['available_bytes'] / 1073741824, 2)
+    replicas['gb'] = round(replicas['bytes'] / 1073741824, 2)
 
     rse_info = []
     for rse in set(replicas['rse'].values):
