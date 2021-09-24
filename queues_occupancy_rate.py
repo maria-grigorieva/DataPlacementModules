@@ -8,15 +8,23 @@ def main(connection: str,
 
     occupancy = """
             WITH all_statuses as (
-            SELECT * FROM (
-            SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite as queue, jobstatus, count(pandaid) as n_jobs
+            SELECT NVL(running,0) as running,
+                   NVL(defined,0) as defined,
+                   NVL(assigned,0) as assigned,
+                   NVL(activated,0) as activated,
+                   NVL(starting,0) as starting,
+                   NVL(transferring,0) as transferring,
+                   computingsite as queue,
+                   datetime
+            FROM (
+            SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
             FROM ATLAS_PANDA.JOBSACTIVE4
-            WHERE modificationtime >= sysdate - :n_days
+            WHERE modificationtime >= sysdate - 1
             GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
             UNION ALL
-            (SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite as queue, jobstatus, count(pandaid) as n_jobs
+            (SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
                 FROM ATLAS_PANDA.JOBSDEFINED4
-            WHERE modificationtime >= sysdate - :n_days
+            WHERE modificationtime >= sysdate - 1
                 GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
             ))
             PIVOT
@@ -27,27 +35,20 @@ def main(connection: str,
                    'assigned' as assigned,
                    'activated' as activated,
                    'starting' as starting,
-                   'transferring' as transferring,
-                   'holding' as holding,
-                   'throttled' as throttled
+                   'transferring' as transferring
             ))
-                    ORDER BY datetime, queue),
+                    ORDER BY datetime, computingsite),
              rate as (
                  SELECT datetime,
                         queue,
-                   ROUND(NVL(running/(defined+activated+starting+assigned),0),6) as queue_occupancy
+                   ROUND(NVL(running/NULLIF((defined+activated+starting+assigned),0),0),4) as queue_occupancy
                   FROM all_statuses
              )
             SELECT a.datetime,
                    a.queue,
                    a.running,
-                   a.defined,
-                   a.assigned,
-                   a.activated,
-                   a.starting,
+                   (a.defined+a.assigned+a.activated+a.starting) as queued,
                    a.transferring,
-                   a.holding,
-                   a.throttled,
                    r.queue_occupancy
             FROM all_statuses a
                 JOIN rate r ON (a.queue = r.queue)
@@ -65,28 +66,24 @@ def main(connection: str,
     occupancy_df.columns = [i.lower() for i in cols]
 
     efficiency = """
-    SELECT
-    computingsite as queue,
-    NVL(ROUND(finished / (finished + failed), 4), 0) as queue_efficiency
-    FROM
-    (SELECT * FROM
-    (SELECT computingsite,
-     jobstatus,
-     count( *) as n_jobs
-    FROM
-    ATLAS_PANDA.JOBSARCHIVED4
-    WHERE modificationtime >= sysdate - :n_days
-    GROUP BY computingsite, jobstatus)
-    PIVOT
-        (
-        SUM(n_jobs)
-        for jobstatus in ('closed' as closed,
-        'cancelled' as cancelled,
-        'failed' as failed,
-        'finished' as finished
-                          ))
-    ORDER BY computingsite)
-    ORDER BY queue_efficiency DESC
+        SELECT computingsite as queue,
+                NVL(ROUND(finished / NULLIF((finished + failed),0), 4), 0) as queue_efficiency
+        FROM
+            (SELECT * FROM
+                (SELECT computingsite,jobstatus,count( *) as n_jobs
+                FROM ATLAS_PANDA.JOBSARCHIVED4
+                WHERE modificationtime >= sysdate - :n_days
+                GROUP BY computingsite, jobstatus)
+                PIVOT
+                    (
+                    SUM(n_jobs)
+                    for jobstatus in ('closed' as closed,
+                    'cancelled' as cancelled,
+                    'failed' as failed,
+                    'finished' as finished
+                                      ))
+                ORDER BY computingsite)
+                ORDER BY queue_efficiency DESC
     """
 
     cursor = connection.cursor()
