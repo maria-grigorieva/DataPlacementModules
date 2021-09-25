@@ -50,36 +50,16 @@ def main(ssl_cert: str,
         # select only disks with write lan permissions
         datadisks = [[d for d in v if 'DATADISK' in d] for k,v in attrs['astorages'].items() if 'write_lan' in k]
         flat_datadisks = list(set([item for sublist in datadisks for item in sublist]))
-        #print(flat_datadisks)
-        if len(datadisks)>0:
+        if len(flat_datadisks)>0:
             queues_info.append({
                 'queue': queue,
                 'site': attrs['rc_site'],
-                'rse': datadisks,
+                'rse': flat_datadisks,
                 'cloud': attrs['cloud'],
                 'tier_level': attrs['tier_level']
             })
     queues_info = pd.DataFrame(queues_info)
     queues_info = queues_info.explode('rse')
-    print(queues_info)
-    # # CRIC returns only online sites by default
-    # for site in cric_sites:
-    #     # Get all DDM endpoints
-    #     ddm_endpoints = [d for d in cric_sites[site]['ddmendpoints']]
-    #     # Get all DATADISKS
-    #     datadisks = [d for d in ddm_endpoints if 'DATADISK' in d]
-    #     # Ignore sites without disks
-    #     if len(datadisks) > 0:
-    #         tmp = {}
-    #         tmp['name'] = site
-    #         tmp['cloud'] = cric_sites[site]['cloud']
-    #         tmp['tier'] = cric_sites[site]['tier_level']
-    #         tmp['corepower'] = cric_sites[site]['corepower']
-    #         tmp['rse'] = datadisks
-    #         sites_info.append(tmp)
-    #
-    # sites_info = pd.DataFrame(sites_info)
-    # sites_info = sites_info.explode('rse')
 
     # get datadisk free space
     query_disk_size = """
@@ -95,14 +75,13 @@ def main(ssl_cert: str,
     cursor.rowfactory = lambda *args: dict(zip([e[0] for e in cursor.description], args))
     disk_sizes = cursor.fetchall()
     disk_sizes = pd.DataFrame(disk_sizes)
-    print(disk_sizes)
 
-    result = pd.merge(queues_info, disk_sizes, left_on='rse', right_on='DATADISK')
+    result = pd.merge(queues_info, disk_sizes, how='left', left_on='rse', right_on='DATADISK')
     result.drop('DATADISK', 1, inplace=True)
     result['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
     result = result[result['FREE_GB'] > disk_free_size_limit_GB]
     result.rename(columns={'FREE_GB': 'free_gb'}, inplace=True)
-    typer.echo(f'Number of sites, available for replicas creation:{sites_info.shape}')
+    typer.echo(f'Number of sites, available for replicas creation:{queues_info.shape}')
     typer.echo(result)
     result.to_csv('data_samples/filtered.csv', date_format='%Y-%m-%d')
     return result
