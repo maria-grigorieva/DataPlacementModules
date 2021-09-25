@@ -39,26 +39,29 @@ def main(ssl_cert: str,
     # ssl_key = '/afs/cern.ch/user/m/mgrigori/.globus/userkey.pem'
     #'/etc/ssl/certs/CERN-bundle.pem'
     cric_base_url = 'https://atlas-cric.cern.ch/'
-    url_site = urllib.parse.urljoin(cric_base_url, 'api/atlas/site/query/?json')
-    url_queue = urllib.parse.urljson(cric_base_url, 'api/atlas/pandaqueue/query/?json')
-    cric_sites = requests.get(url_site, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
+    #url_site = urllib.parse.urljoin(cric_base_url, 'api/atlas/site/query/?json')
+    url_queue = urllib.parse.urljoin(cric_base_url, 'api/atlas/pandaqueue/query/?json')
+    #cric_sites = requests.get(url_site, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
     cric_queues = requests.get(url_queue, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
     sites_info = []
     queues_info = []
 
     for queue,attrs in cric_queues.items():
+        # select only disks with write lan permissions
         datadisks = [[d for d in v if 'DATADISK' in d] for k,v in attrs['astorages'].items() if 'write_lan' in k]
+        flat_datadisks = list(set([item for sublist in datadisks for item in sublist]))
+        #print(flat_datadisks)
         if len(datadisks)>0:
             queues_info.append({
                 'queue': queue,
                 'site': attrs['rc_site'],
                 'rse': datadisks,
                 'cloud': attrs['cloud'],
-                'tier_level': attrs['ties_level']
+                'tier_level': attrs['tier_level']
             })
     queues_info = pd.DataFrame(queues_info)
     queues_info = queues_info.explode('rse')
-
+    print(queues_info)
     # # CRIC returns only online sites by default
     # for site in cric_sites:
     #     # Get all DDM endpoints
@@ -92,8 +95,9 @@ def main(ssl_cert: str,
     cursor.rowfactory = lambda *args: dict(zip([e[0] for e in cursor.description], args))
     disk_sizes = cursor.fetchall()
     disk_sizes = pd.DataFrame(disk_sizes)
+    print(disk_sizes)
 
-    result = pd.merge(sites_info, disk_sizes, left_on='rse', right_on='DATADISK')
+    result = pd.merge(queues_info, disk_sizes, left_on='rse', right_on='DATADISK')
     result.drop('DATADISK', 1, inplace=True)
     result['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
     result = result[result['FREE_GB'] > disk_free_size_limit_GB]
