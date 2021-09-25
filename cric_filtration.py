@@ -40,28 +40,43 @@ def main(ssl_cert: str,
     #'/etc/ssl/certs/CERN-bundle.pem'
     cric_base_url = 'https://atlas-cric.cern.ch/'
     url_site = urllib.parse.urljoin(cric_base_url, 'api/atlas/site/query/?json')
+    url_queue = urllib.parse.urljson(cric_base_url, 'api/atlas/pandaqueue/query/?json')
     cric_sites = requests.get(url_site, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
-
+    cric_queues = requests.get(url_queue, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
     sites_info = []
+    queues_info = []
 
-    # CRIC returns only online sites by default
-    for site in cric_sites:
-        # Get all DDM endpoints
-        ddm_endpoints = [d for d in cric_sites[site]['ddmendpoints']]
-        # Get all DATADISKS
-        datadisks = [string for string in ddm_endpoints if 'DATADISK' in string]
-        # Ignore sites without disks
-        if len(datadisks) > 0:
-            tmp = {}
-            tmp['name'] = site
-            tmp['cloud'] = cric_sites[site]['cloud']
-            tmp['tier'] = cric_sites[site]['tier_level']
-            tmp['corepower'] = cric_sites[site]['corepower']
-            tmp['rse'] = datadisks
-            sites_info.append(tmp)
+    for queue,attrs in cric_queues.items():
+        datadisks = [[d for d in v if 'DATADISK' in d] for k,v in attrs['astorages'].items() if 'write_lan' in k]
+        if len(datadisks)>0:
+            queues_info.append({
+                'queue': queue,
+                'site': attrs['rc_site'],
+                'rse': datadisks,
+                'cloud': attrs['cloud'],
+                'tier_level': attrs['ties_level']
+            })
+    queues_info = pd.DataFrame(queues_info)
+    queues_info = queues_info.explode('rse')
 
-    sites_info = pd.DataFrame(sites_info)
-    sites_info = sites_info.explode('rse')
+    # # CRIC returns only online sites by default
+    # for site in cric_sites:
+    #     # Get all DDM endpoints
+    #     ddm_endpoints = [d for d in cric_sites[site]['ddmendpoints']]
+    #     # Get all DATADISKS
+    #     datadisks = [d for d in ddm_endpoints if 'DATADISK' in d]
+    #     # Ignore sites without disks
+    #     if len(datadisks) > 0:
+    #         tmp = {}
+    #         tmp['name'] = site
+    #         tmp['cloud'] = cric_sites[site]['cloud']
+    #         tmp['tier'] = cric_sites[site]['tier_level']
+    #         tmp['corepower'] = cric_sites[site]['corepower']
+    #         tmp['rse'] = datadisks
+    #         sites_info.append(tmp)
+    #
+    # sites_info = pd.DataFrame(sites_info)
+    # sites_info = sites_info.explode('rse')
 
     # get datadisk free space
     query_disk_size = """
