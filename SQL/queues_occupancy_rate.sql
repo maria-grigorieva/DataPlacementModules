@@ -32,7 +32,7 @@ PIVOT
  rate as (
      SELECT datetime,
             queue,
-       ROUND(NVL(running/NULLIF((defined+activated+starting+assigned),0),0),4) as queue_occupancy
+      round(nvl((running+1)/((activated+assigned+defined+starting+10)*greatest(1,least(2,(assigned/nullif(activated,0))))),0),2) as queue_occupancy
       FROM all_statuses
  )
 SELECT a.datetime,
@@ -43,4 +43,6 @@ SELECT a.datetime,
        r.queue_occupancy
 FROM all_statuses a
     JOIN rate r ON (a.queue = r.queue)
+WHERE a.activated+a.starting <= 2*a.running
+AND a.defined+a.activated+a.assigned+a.starting <=2*a.running
 ORDER BY r.queue_occupancy DESC;
