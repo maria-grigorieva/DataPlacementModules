@@ -1,26 +1,6 @@
 # Sites Filtration service
 # Return only online sites with DATADISKS having more than 200 GB free space
-# metadata:
-# - sitename
-# - cloud
-# - tier
-# - corepower
-# - datadisk
-# - FREE_GB
-# Sample Result:
-# -------------------------------------------------------------------------------
-#            sitename cloud  tier  corepower                  datadisk    FREE_GB
-# 0             AGLT2    US     2     10.960            AGLT2_DATADISK  284157.38
-# 1   Australia-ATLAS    CA     2     11.377  AUSTRALIA-ATLAS_DATADISK  146160.12
-# 2      BEIJING-LCG2    FR     2     19.113     BEIJING-LCG2_DATADISK   34461.96
-# 3         BNL-ATLAS    US     1     12.690         BNL-OSG2_DATADISK  183927.31
-# 4            BNLHPC    US     3     12.690           BNLHPC_DATADISK   23496.42
-# ..              ...   ...   ...        ...                       ...        ...
-# 76     ZA-WITS-CORE    NL     3     10.000     ZA-WITS-CORE_DATADISK   38495.07
-# 77             ifae    ES     2     12.167             IFAE_DATADISK   57020.10
-# 78              pic    ES     1     12.121              PIC_DATADISK  278164.68
-# 79       praguelcg2    DE     2     16.752       PRAGUELCG2_DATADISK  171278.79
-# 80    wuppertalprod    DE     2      9.800    WUPPERTALPROD_DATADISK  262586.40
+# Exclude TEST queues
 
 import typer
 import urllib.parse
@@ -50,7 +30,7 @@ def main(ssl_cert: str,
         # select only disks with write lan permissions
         datadisks = [[d for d in v if 'DATADISK' in d] for k,v in attrs['astorages'].items() if 'write_lan' in k]
         flat_datadisks = list(set([item for sublist in datadisks for item in sublist]))
-        if len(flat_datadisks)>0:
+        if len(flat_datadisks)>0 and 'test' not in queue.lower():
             queues_info.append({
                 'queue': queue,
                 'site': attrs['rc_site'],
@@ -84,9 +64,11 @@ def main(ssl_cert: str,
     typer.echo(f'Number of sites, available for replicas creation:{queues_info.shape}')
     typer.echo(result)
     result.to_csv('data_samples/filtered.csv', date_format='%Y-%m-%d')
+
     return result
 
 
 if __name__ == '__main__':
     typer.run(main)
+
 
