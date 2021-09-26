@@ -36,7 +36,10 @@ def main(ssl_cert: str,
                 'site': attrs['rc_site'],
                 'rse': flat_datadisks,
                 'cloud': attrs['cloud'],
-                'tier_level': attrs['tier_level']
+                'tier_level': attrs['tier_level'],
+                'corepower': attrs['corepower'],
+                'corecount': attrs['corecount'],
+                'nodes': attrs['nodes']
             })
     queues_info = pd.DataFrame(queues_info)
     queues_info = queues_info.explode('rse')
