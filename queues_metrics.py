@@ -20,11 +20,13 @@ def main(connection: str,
             SELECT TRUNC((sysdate),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
             FROM ATLAS_PANDA.JOBSACTIVE4
             WHERE modificationtime >= sysdate - :n_days
+            AND LOWER(computingsite) NOT LIKE '%test%' 
             GROUP BY TRUNC((sysdate),'DAY'), computingsite, jobstatus
             UNION ALL
             (SELECT TRUNC((sysdate),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
                 FROM ATLAS_PANDA.JOBSDEFINED4
             WHERE modificationtime >= sysdate - :n_days
+            AND LOWER(computingsite) NOT LIKE '%test%' 
                 GROUP BY TRUNC((sysdate),'DAY'), computingsite, jobstatus
             ))
             PIVOT
@@ -76,6 +78,7 @@ def main(connection: str,
                 (SELECT computingsite,jobstatus,count( *) as n_jobs
                 FROM ATLAS_PANDA.JOBSARCHIVED4
                 WHERE modificationtime >= sysdate - :n_days
+                AND LOWER(computingsite) NOT LIKE '%test%' 
                 GROUP BY computingsite, jobstatus)
                 PIVOT
                     (
