@@ -19,11 +19,8 @@ def main(ssl_cert: str,
     # ssl_key = '/afs/cern.ch/user/m/mgrigori/.globus/userkey.pem'
     #'/etc/ssl/certs/CERN-bundle.pem'
     cric_base_url = 'https://atlas-cric.cern.ch/'
-    #url_site = urllib.parse.urljoin(cric_base_url, 'api/atlas/site/query/?json')
     url_queue = urllib.parse.urljoin(cric_base_url, 'api/atlas/pandaqueue/query/?json')
-    #cric_sites = requests.get(url_site, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
     cric_queues = requests.get(url_queue, cert=(ssl_cert, ssl_key), verify=tls_ca_certificate).json()
-    sites_info = []
     queues_info = []
 
     for queue,attrs in cric_queues.items():
@@ -40,7 +37,7 @@ def main(ssl_cert: str,
                 'corepower': attrs['corepower'],
                 'corecount': attrs['corecount'],
                 'nodes': attrs['nodes'],
-                'transferringlimit': attrs['transferringlimit']
+                'transferringlimit': attrs['transferringlimit']|2000
             })
     queues_info = pd.DataFrame(queues_info)
     queues_info = queues_info.explode('rse')
