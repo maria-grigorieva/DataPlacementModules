@@ -44,8 +44,9 @@ def main(x509_user_proxy: str,
 
         arr.append(replicas)
     result = pd.concat(arr)
-    result['available_gb'] = round(result['available_bytes']/1073741824,2)
-    result['gb'] = round(result['bytes'] / 1073741824, 2)
+    result['available_TB'] = round(result['available_bytes']/1073741824/1024,4)
+    result['TB'] = round(result['bytes'] / 1073741824/1024, 4)
+    result.drop(['bytes', 'available_bytes'], axis=1, inplace=True)
 
     rse_info = []
     for rse in set(result['rse'].values):
