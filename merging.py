@@ -18,7 +18,7 @@ merged_storage = pd.merge(merged, storage_info, left_on='rse', right_on='rse', h
 merged_limit = merged_storage[merged_storage['transferring'] < merged_storage['transferringlimit']]
 result = merged_limit[merged_limit['transferring'] < 2*merged_limit['running']]
 
-# skip rse with free space <= 0.2 TB
-result = result[result['Free(storage)'] > 0.2]
+result.drop(['datetime_y','Storage Timestamp'], axis=1, inplace=True)
+result.rename(columns={'datetime_x':'datetime'}, inplace=True)
 
 result.to_csv('data_samples/merged.csv')
