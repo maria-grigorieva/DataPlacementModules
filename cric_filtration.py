@@ -62,6 +62,8 @@ def main(ssl_cert: str,
     # result.rename(columns={'FREE_GB': 'free_gb'}, inplace=True)
     # typer.echo(f'Number of sites, available for replicas creation:{queues_info.shape}')
     # typer.echo(result)
+
+    queues_info['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
     queues_info.to_csv('data_samples/filtered.csv', date_format='%Y-%m-%d')
 
     return queues_info
