@@ -8,4 +8,11 @@ queues_metrics = pd.read_csv('data_samples/queues_metrics.csv',index_col=[0])
 merged = pd.merge(filtered, queues_metrics, left_on='queue', right_on='queue', how='inner')
 merged.rename(columns={'datetime_x':'datetime'}, inplace=True)
 merged.drop('datetime_y', 1, inplace=True)
-merged.to_csv('data_samples/merged.csv')
+
+# filter by transferring limit
+# skip if transferring > max(transferring_limit, 2 x running),
+# where transferring_limit limit is defined by site or 2000 if undefined
+merged_limit = merged[merged['transferring'] < merged['transferringlimit']]
+result = merged_limit[merged_limit['transferring'] < 2*merged_limit['running']]
+
+result.to_csv('data_samples/merged.csv')

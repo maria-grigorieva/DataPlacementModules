@@ -56,14 +56,14 @@ def main(x509_user_proxy: str,
     rse_info = pd.DataFrame(rse_info)
 
     rse_info = rse_info[['rse', 'cloud', 'site', 'tier', 'freespace']]
+    # freespace is in TERABYTES (primary and secondary replicas)
     rse_info['freespace'] = rse_info['freespace'].apply(pd.to_numeric, errors='coerce')
-    rse_info['rse_free_gb'] = round(rse_info['freespace']/1073741824, 2)
-    rse_info.rename(columns={'freespace':'rse_free_bytes'}, inplace=True)
+    rse_info['rse_free_gb'] = round(rse_info['freespace']*1024, 2)
+    rse_info.rename(columns={'freespace':'rse_free_gb'}, inplace=True)
 
     info = pd.merge(result, rse_info, left_on='rse', right_on='rse')
     info['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
 
-    print(info.to_dict('records'))
     info.to_csv('data_samples/dataset_replicas.csv')
     return info.to_dict('records')
 
