@@ -37,7 +37,7 @@ def main(ssl_cert: str,
                 'corepower': attrs['corepower'],
                 'corecount': attrs['corecount'],
                 'nodes': attrs['nodes'],
-                'transferringlimit': attrs['transferringlimit']|2000
+                'transferringlimit': attrs['transferringlimit'] or 2000
             })
     queues_info = pd.DataFrame(queues_info)
     queues_info = queues_info.explode('rse')
