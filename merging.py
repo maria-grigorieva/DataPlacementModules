@@ -21,4 +21,18 @@ result = merged_limit[merged_limit['transferring'] < 2*merged_limit['running']]
 result.drop(['datetime_y','Storage Timestamp'], axis=1, inplace=True)
 result.rename(columns={'datetime_x':'datetime'}, inplace=True)
 
-result.to_csv('data_samples/merged.csv')
+grouped = result.groupby(['datetime','rse','site','cloud','tier_level']).agg({'queue_efficiency': 'max',
+                                                  'queue_occupancy': 'max',
+                                                  'Free(storage)': 'max',
+                                                  'Total(storage)': 'max',
+                                                  'Unlocked': 'max',
+                                                  'transferring':'max',
+                                                  'transferringlimit': 'max',
+                                                  'corecount': 'max',
+                                                  'corepower': 'max',
+                                                  'running': 'max',
+                                                  'queued': 'max',
+                                                  'finished': 'max',
+                                                  'failed': 'max'})
+grouped.reset_index(inplace=True)
+grouped.to_csv('data_samples/merged.csv')
