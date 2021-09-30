@@ -25,6 +25,8 @@ def main():
     df.rename(columns={'index':'rse'}, inplace=True)
     df['datetime'] = dt.datetime.today().strftime("%m-%d-%Y")
     df = df[df['rse'].str.contains('DATADISK')]
+    cols = df.columns.drop(['rse','datetime'])
+    df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
     df.to_csv('data_samples/storage_info.csv')
 
 
