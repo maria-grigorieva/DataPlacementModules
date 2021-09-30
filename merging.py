@@ -25,6 +25,8 @@ grouped = result.groupby(['datetime','rse','site','cloud','tier_level']).agg({'q
                                                   'queue_occupancy': 'max',
                                                   'Free(storage)': 'max',
                                                   'Total(storage)': 'max',
+                                                  'Difference': 'max',
+                                                  'Primary diff': 'max',
                                                   'Unlocked': 'max',
                                                   'transferring':'max',
                                                   'transferringlimit': 'max',
@@ -34,5 +36,6 @@ grouped = result.groupby(['datetime','rse','site','cloud','tier_level']).agg({'q
                                                   'queued': 'max',
                                                   'finished': 'max',
                                                   'failed': 'max'})
+grouped['transferring_availability'] = grouped['transferringlimit']-grouped['transferring']
 grouped.reset_index(inplace=True)
 grouped.to_csv('data_samples/merged.csv')
