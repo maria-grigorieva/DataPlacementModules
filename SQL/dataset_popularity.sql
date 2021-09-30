@@ -1,6 +1,8 @@
 -- get all popular datasets (mc/data DAOD, user analysis) for the last 7 days
-SELECT * FROM(
-    SELECT TRUNC(t.modificationtime,'DAY') as datetime,
+SELECT *
+FROM
+(
+    SELECT
        d.datasetname,
        count(distinct t.jeditaskid) as n_tasks,
        count(distinct t.username) as n_users
@@ -12,6 +14,6 @@ SELECT * FROM(
     AND d.type = 'input'
     AND t.endtime is not NULL
     AND d.masterid is null
-    GROUP BY TRUNC(t.modificationtime,'DAY'), d.datasetname
-    ORDER BY count(t.jeditaskid) DESC)
-WHERE n_tasks >= 10 and n_users>1;
+    GROUP BY d.datasetname)
+    WHERE n_tasks >= 10
+ORDER BY n_tasks DESC;
