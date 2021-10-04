@@ -4,7 +4,10 @@ import numpy as np
 
 def main(datasetname: str):
 
-    merged = pd.read_csv('data_samples/merged_v1.csv',index_col=[0])
+    merged = pd.read_csv('data_samples/merged.csv',index_col=[0])
+
+    # applying filters to merged data
+    merged = merged[(merged['Difference'] > 15) & (merged['queue_efficiency'] >= 0.8) & (merged['queue_occupancy'] >= 2)]
     distances = pd.read_csv('data_samples/distances.csv',index_col=[0])
     distances.reset_index(inplace=True)
     datasets = pd.read_csv(f'dataset_replicas/{datasetname}.csv',index_col=[0])
@@ -16,7 +19,10 @@ def main(datasetname: str):
         result = pd.merge(merged, dist, left_on='rse', right_on='DEST')
         result.drop('DEST',axis=1,inplace=True)
         result.rename(columns={'AGIS_DISTANCE':f'{r}_distance'},inplace=True)
-        # Normalization
+
+        # filter distances
+        result = result[(result[f'{r}_distance'] > 0) & (result[f'{r}_distance'] < 5)]
+
         dist_max = distances['AGIS_DISTANCE'].max()
         result[f'{r}_closeness'] = dist_max - result[f'{r}_distance']
         result.set_index(['rse','site','cloud','datetime','tier_level','queue'], inplace=True)
@@ -32,7 +38,7 @@ def main(datasetname: str):
                                                        f'{r}_closeness': 'max',
                                                        f'{r}_distance': 'max',
                                                        'transferring_availability': 'max'})
-
+        # Normalization
         norm_df = grouped.apply(lambda x: round((x - np.mean(x)) / (np.max(x) - np.min(x)),3))
         norm_df.reset_index(inplace=True)
 
