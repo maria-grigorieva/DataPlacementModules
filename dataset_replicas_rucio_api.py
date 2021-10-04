@@ -12,6 +12,7 @@ import pandas as pd
 from rucio.client import Client
 import os
 import typer
+import datetime as dt
 
 
 def main(x509_user_proxy: str,
@@ -47,7 +48,7 @@ def main(x509_user_proxy: str,
         rules_df['has_rule'] = True
         cols_to_use = rules_df.columns.difference(replicas.columns)
         all_replicas = pd.merge(replicas, rules_df[cols_to_use], left_on='rse', right_on='rse_expression', how='outer')
-        all_replicas['timestamp'] = pd.to_datetime("today")
+        all_replicas['timestamp'] =  dt.datetime.today().strftime("%m-%d-%Y")
         all_replicas['available_TB'] = round(all_replicas['available_bytes']/1073741824/1024, 2)
         all_replicas['TB'] = round(all_replicas['bytes']/1073741824/1024, 2)
 
@@ -63,6 +64,13 @@ def main(x509_user_proxy: str,
         result = pd.merge(all_replicas, rse_info, left_on='rse', right_on='rse')
         result['official'].fillna(False, inplace=True)
         result['has_rule'].fillna(False, inplace=True)
+        result.drop(['rse_id','available_bytes','bytes','child_rule_id','comments',
+                     'eol_at','error','grouping','id','ignore_account_limit',
+                     'ignore_availability','locked','locks_ok_cnt',
+                     'locks_replicating_cnt','locks_stuck_cnt','meta',
+                     'notification','priority','purge_replicas','rse_expression',
+                     'rule_id','source_replica_expression','stuck_at','subscription_id',
+                     'weight'], axis=1, inplace=True)
         result.to_csv(f'dataset_replicas/{name}.csv')
         return replicas.to_dict('records')
     except Exception as e:
