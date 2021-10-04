@@ -71,7 +71,7 @@ def main(x509_user_proxy: str,
                      'notification','priority','purge_replicas','rse_expression',
                      'rule_id','source_replica_expression','stuck_at','subscription_id',
                      'weight'], axis=1, inplace=True)
-        result.to_csv(f'dataset_replicas/{name}.csv')
+        result.to_csv(f'dataset_replicas/{dataset}.csv')
         return replicas.to_dict('records')
     except Exception as e:
         print('Error connecting to Rucio Client...')
