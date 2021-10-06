@@ -22,13 +22,13 @@ def main(datasetname: str):
         dist = distances[distances['SOURCE'] == r][['DEST','AGIS_DISTANCE']]
         result = pd.merge(merged, dist, left_on='rse', right_on='DEST')
         result.drop('DEST',axis=1,inplace=True)
-        result.rename(columns={'AGIS_DISTANCE':f'{r}_distance'},inplace=True)
+        result.rename(columns={'AGIS_DISTANCE':'distance_from_source'},inplace=True)
 
         # filter distances
-        result = result[(result[f'{r}_distance'] > 0) & (result[f'{r}_distance'] < 5)]
+        result = result[(result['distance_from_source'] > 0) & (result['distance_from_source'] < 5)]
 
         dist_max = distances['AGIS_DISTANCE'].max()
-        result[f'{r}_closeness'] = dist_max - result[f'{r}_distance']
+        result['closeness'] = dist_max - result['distance_from_source']
 
         grouped_dynamic_replicas = pd.merge(result, dynamic_replicas, left_on='rse',
                                             right_on='rse', how='outer')
@@ -44,8 +44,8 @@ def main(datasetname: str):
                                                        'queue_occupancy': 'max',
                                                        'Difference': 'max',
                                                        'Unlocked': 'max',
-                                                       f'{r}_closeness': 'max',
-                                                       f'{r}_distance': 'max',
+                                                       'closeness': 'max',
+                                                       'distance_from_source': 'max',
                                                        'transferring_availability': 'max',
                                                        'dataset_size_TB':'max',
                                                        'available_TB':'max'})
@@ -59,13 +59,14 @@ def main(datasetname: str):
                                 norm_df['queue_occupancy']+\
                                 norm_df['Difference']+\
                                 norm_df['Unlocked']+\
-                                norm_df[f'{r}_closeness']+\
+                                norm_df['closeness']+\
                                 norm_df['transferring_availability']+\
                                 norm_df['available_TB']
 
         grouped.reset_index(inplace=True)
 
         grouped['rse_weight'] = round(norm_df['rse_weight'],3)
+        grouped['source_replica'] = r
 
         grouped.to_csv(f'suggestions/{datasetname}_{r}.csv')
 
