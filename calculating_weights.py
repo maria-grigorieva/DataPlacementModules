@@ -8,11 +8,15 @@ def main(datasetname: str):
 
     # applying filters to merged data
     merged = merged[(merged['Difference'] > 15) & (merged['queue_efficiency'] >= 0.8) & (merged['queue_occupancy'] >= 2)]
+
     distances = pd.read_csv('data_samples/distances.csv',index_col=[0])
     distances.reset_index(inplace=True)
+
     datasets = pd.read_csv(f'dataset_replicas/{datasetname}.csv',index_col=[0])
 
     replicas = datasets[datasets['official']==True]['rse'].values
+
+    dynamic_replicas = datasets[datasets['official']==False][['rse','TB','available_TB','official']]
 
     for r in replicas:
         dist = distances[distances['SOURCE'] == r][['DEST','AGIS_DISTANCE']]
@@ -25,9 +29,14 @@ def main(datasetname: str):
 
         dist_max = distances['AGIS_DISTANCE'].max()
         result[f'{r}_closeness'] = dist_max - result[f'{r}_distance']
-        result.set_index(['rse','site','cloud','datetime','tier_level','queue'], inplace=True)
 
-        grouped = result.groupby(['datetime',
+        grouped_dynamic_replicas = pd.merge(result, dynamic_replicas, left_on='rse',
+                                            right_on='rse', how='outer')
+        grouped_dynamic_replicas['dataset_size_TB'] = dynamic_replicas['TB'].values[0]
+        grouped_dynamic_replicas.drop('TB',axis=1,inplace=True)
+        grouped_dynamic_replicas['available_TB'].fillna(0,inplace=True)
+
+        grouped = grouped_dynamic_replicas.groupby(['datetime',
                                    'rse',
                                    'site',
                                    'cloud',
@@ -37,7 +46,11 @@ def main(datasetname: str):
                                                        'Unlocked': 'max',
                                                        f'{r}_closeness': 'max',
                                                        f'{r}_distance': 'max',
-                                                       'transferring_availability': 'max'})
+                                                       'transferring_availability': 'max',
+                                                       'dataset_size_TB':'max',
+                                                       'available_TB':'max'})
+
+
         # Normalization
         norm_df = grouped.apply(lambda x: round((x - np.mean(x)) / (np.max(x) - np.min(x)),3))
         norm_df.reset_index(inplace=True)
@@ -47,7 +60,8 @@ def main(datasetname: str):
                                 norm_df['Difference']+\
                                 norm_df['Unlocked']+\
                                 norm_df[f'{r}_closeness']+\
-                                norm_df['transferring_availability']
+                                norm_df['transferring_availability']+\
+                                norm_df['available_TB']
 
         grouped.reset_index(inplace=True)
 
