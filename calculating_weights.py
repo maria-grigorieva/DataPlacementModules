@@ -36,19 +36,19 @@ def main(datasetname: str):
         grouped_dynamic_replicas.drop('TB',axis=1,inplace=True)
         grouped_dynamic_replicas['available_TB'].fillna(0,inplace=True)
 
-        grouped = grouped_dynamic_replicas.groupby(['rse']).agg({'queue_efficiency': 'max',
-                                                       'queue_occupancy': 'max',
-                                                       'Difference': 'max',
-                                                       'Unlocked': 'max',
-                                                       'closeness': 'max',
-                                                       'distance_from_source': 'max',
-                                                       'transferring_availability': 'max',
-                                                       'dataset_size_TB':'max',
-                                                       'available_TB':'max'})
+        # grouped = grouped_dynamic_replicas.groupby('rse').agg({'queue_efficiency': 'max',
+        #                                                'queue_occupancy': 'max',
+        #                                                'Difference': 'max',
+        #                                                'Unlocked': 'max',
+        #                                                'closeness': 'max',
+        #                                                'distance_from_source': 'max',
+        #                                                'transferring_availability': 'max',
+        #                                                'dataset_size_TB':'max',
+        #                                                'available_TB':'max'})
 
-
+        grouped_dynamic_replicas.set_index(['queue','rse','site','cloud','tier_level','datetime','official'],inplace=True)
         # Normalization
-        norm_df = grouped.apply(lambda x: round((x - np.mean(x)) / (np.max(x) - np.min(x)),3))
+        norm_df = grouped_dynamic_replicas.apply(lambda x: round((x - np.mean(x)) / (np.max(x) - np.min(x)),3))
         norm_df[np.isnan(norm_df)] = 0
         norm_df.reset_index(inplace=True)
 
@@ -60,12 +60,13 @@ def main(datasetname: str):
                                 norm_df['transferring_availability']+\
                                 norm_df['available_TB']
 
-        grouped.reset_index(inplace=True)
+        grouped_dynamic_replicas.reset_index(inplace=True)
 
-        grouped['rse_weight'] = round(norm_df['rse_weight'],3)
-        grouped['source_replica'] = r
+        grouped_dynamic_replicas['rse_weight'] = round(norm_df['rse_weight'],3)
+        grouped_dynamic_replicas['source_replica'] = r
 
-        grouped.to_csv(f'suggestions/{datasetname}_{r}.csv')
+        grouped_dynamic_replicas.to_csv(f'suggestions/{datasetname}_{r}.csv')
+
 
 if __name__ == '__main__':
     typer.run(main)
