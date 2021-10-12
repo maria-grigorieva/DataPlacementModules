@@ -7,7 +7,7 @@ def main(datasetname: str):
     merged = pd.read_csv('data_samples/merged.csv',index_col=[0])
 
     # applying filters to merged data
-    merged = merged[(merged['Difference'] > 15) & (merged['queue_efficiency'] >= 0.8) & (merged['queue_occupancy'] >= 2)]
+    #merged = merged[(merged['Difference'] > 15) & (merged['queue_efficiency'] >= 0.8) & (merged['queue_occupancy'] >= 2)]
 
     distances = pd.read_csv('data_samples/distances.csv',index_col=[0])
     distances.reset_index(inplace=True)
@@ -25,14 +25,14 @@ def main(datasetname: str):
         result.rename(columns={'AGIS_DISTANCE':'distance_from_source'},inplace=True)
 
         # filter distances
-        result = result[(result['distance_from_source'] > 0) & (result['distance_from_source'] < 5)]
+        # result = result[(result['distance_from_source'] > 0) & (result['distance_from_source'] < 5)]
 
         dist_max = distances['AGIS_DISTANCE'].max()
         result['closeness'] = dist_max - result['distance_from_source']
 
         grouped_dynamic_replicas = pd.merge(result, dynamic_replicas, left_on='rse',
                                             right_on='rse', how='outer')
-        grouped_dynamic_replicas['dataset_size_TB'] = dynamic_replicas['TB'].values[0]
+        grouped_dynamic_replicas['dataset_size_TB'] = datasets[datasets['official']==True]['TB'].values[0]
         grouped_dynamic_replicas.drop('TB',axis=1,inplace=True)
         grouped_dynamic_replicas['available_TB'].fillna(0,inplace=True)
 
@@ -53,6 +53,7 @@ def main(datasetname: str):
 
         # Normalization
         norm_df = grouped.apply(lambda x: round((x - np.mean(x)) / (np.max(x) - np.min(x)),3))
+        norm_df[np.isnan(norm_df)] = 0
         norm_df.reset_index(inplace=True)
 
         norm_df['rse_weight'] = norm_df['queue_efficiency']+\
