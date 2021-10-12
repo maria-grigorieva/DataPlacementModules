@@ -36,11 +36,7 @@ def main(datasetname: str):
         grouped_dynamic_replicas.drop('TB',axis=1,inplace=True)
         grouped_dynamic_replicas['available_TB'].fillna(0,inplace=True)
 
-        grouped = grouped_dynamic_replicas.groupby(['datetime',
-                                   'rse',
-                                   'site',
-                                   'cloud',
-                                   'tier_level']).agg({'queue_efficiency': 'max',
+        grouped = grouped_dynamic_replicas.groupby(['rse']).agg({'queue_efficiency': 'max',
                                                        'queue_occupancy': 'max',
                                                        'Difference': 'max',
                                                        'Unlocked': 'max',
