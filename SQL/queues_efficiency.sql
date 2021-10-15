@@ -1,3 +1,4 @@
+-- queues efficiency only for analysis jobs
 SELECT TRUNC(sysdate,'DAY') as datetime,
        computingsite as queue,
        NVL(ROUND(finished/(finished+failed),4),0) as efficiency
@@ -7,6 +8,7 @@ SELECT TRUNC(sysdate,'DAY') as datetime,
        jobstatus,
        count(*) as n_jobs
 FROM ATLAS_PANDA.JOBSARCHIVED4
+WHERE prodsourcelabel = 'user'
 GROUP BY computingsite, jobstatus)
 PIVOT
 (

@@ -1,3 +1,5 @@
+-- queues occupancy only for user analysis jobs
+
 WITH all_statuses as (
 SELECT NVL(running,0) as running,
        NVL(defined,0) as defined,
@@ -10,12 +12,12 @@ SELECT NVL(running,0) as running,
 FROM (
 SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
 FROM ATLAS_PANDA.JOBSACTIVE4
-WHERE modificationtime >= sysdate - 1
+WHERE modificationtime >= sysdate - 1 and prodsourcelabel = 'user'
 GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
 UNION ALL
 (SELECT TRUNC((sysdate - 1),'DAY') as datetime, computingsite, jobstatus, count(pandaid) as n_jobs
     FROM ATLAS_PANDA.JOBSDEFINED4
-WHERE modificationtime >= sysdate - 1
+WHERE modificationtime >= sysdate - 1 and prodsourcelabel = 'user'
     GROUP BY TRUNC((sysdate - 1),'DAY'), computingsite, jobstatus
 ))
 PIVOT
@@ -43,6 +45,4 @@ SELECT a.datetime,
        r.queue_occupancy
 FROM all_statuses a
     JOIN rate r ON (a.queue = r.queue)
-WHERE a.activated+a.starting <= 2*a.running
-AND a.defined+a.activated+a.assigned+a.starting <=2*a.running
 ORDER BY r.queue_occupancy DESC;

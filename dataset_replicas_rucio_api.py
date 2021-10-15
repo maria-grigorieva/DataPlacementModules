@@ -19,6 +19,7 @@ def main(x509_user_proxy: str,
          account: str,
          auth_type: str,
          dataset: str):
+
     os.environ['X509_USER_PROXY'] = x509_user_proxy
     os.environ['RUCIO_ACCOUNT'] = account
     os.environ['RUCIO_AUTH_TYPE'] = auth_type
@@ -75,6 +76,7 @@ def main(x509_user_proxy: str,
         return replicas.to_dict('records')
     except Exception as e:
         print('Error connecting to Rucio Client...')
+
 
 if __name__ == '__main__':
     typer.run(main)
