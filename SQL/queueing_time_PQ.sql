@@ -4,7 +4,7 @@
 -- queue_time_max
 -- queue_time_min
 -- queue_time_median
--- n_jobs
+-- n_tasks
 -- weighted_avg_queue_time
 -- weighted_median_queue_time
 with a as (
@@ -43,17 +43,17 @@ group by queue
 ),
      b as (
          select computingsite as queue,
-       count(pandaid) as n_jobs
+       count(pandaid) as n_tasks
 from ATLAS_PANDA.JOBSACTIVE4
 where modificationtime >= sysdate - 1
 and prodsourcelabel = 'user'
 group by computingsite
      ),
      c as (
-        select sum(n_jobs) as total_jobs from b
+        select sum(n_tasks) as total_jobs from b
      )
 select a.*, b.n_jobs,
-       round((a.queue_time_avg * b.n_jobs)/c.total_jobs,3) as weighted_avg_queue_time,
-       round((a.queue_time_median * b.n_jobs)/c.total_jobs,3) as weighted_median_queue_time
+       round((a.queue_time_avg * b.n_tasks)/c.total_jobs,3) as weighted_avg_queue_time,
+       round((a.queue_time_median * b.n_tasks)/c.total_jobs,3) as weighted_median_queue_time
 from a,b,c
 where a.queue = b.queue;
